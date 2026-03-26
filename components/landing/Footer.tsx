@@ -1,3 +1,5 @@
+import Image from 'next/image'
+
 export default function Footer() {
   return (
     <div className="app-footer">
@@ -38,10 +40,9 @@ export default function Footer() {
           <div className="footer-col">
             <h3 className="footer-subheading">Contact Us</h3>
             <address className="footer-address">
-              <p>123 Innovation Street</p>
-              <p>Tech City, TC 12345</p>
-              <p>Phone: (123) 456-7890</p>
-              <p>Email: hello@example.com</p>
+              <p>AbhishekPuram Jankipuram,</p>
+              <p>Lucknow 226021</p>
+              <p>Email: bajpai.connect@gmail.com</p>
             </address>
           </div>
 
@@ -81,7 +82,14 @@ export default function Footer() {
             © 2026 - All rights reserved, Resync ai
           </div>
           <div className="footer-creator">
-            Built with care by <span className="creator-name">Afreen Aurshi</span>
+            Developed by{' '}
+            <Image
+              src="/images/bajpailogo.png"
+              alt="Developer Logo"
+              width={100}
+              height={28}
+              className="inline-block align-middle"
+            />
           </div>
           <div className="footer-legal">
             <a href="#">Privacy Policy</a>
