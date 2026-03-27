@@ -1,3 +1,5 @@
+import { Linkedin, Github, Twitter, Mail, Briefcase, Send } from 'lucide-react';
+
 export default function Footer() {
   return (
     <div className="app-footer">
@@ -11,12 +13,7 @@ export default function Footer() {
             <form className="footer-form">
               <input type="email" placeholder="Enter your email" className="footer-input" />
               <button type="button" className="footer-submit-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  className="lucide lucide-send">
-                  <line x1="22" x2="11" y1="2" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
+                <Send size={16} />
               </button>
             </form>
             <div className="footer-glow"></div>
@@ -38,38 +35,31 @@ export default function Footer() {
           <div className="footer-col">
             <h3 className="footer-subheading">Contact Us</h3>
             <address className="footer-address">
-              <p>123 Innovation Street</p>
-              <p>Tech City, TC 12345</p>
-              <p>Phone: (123) 456-7890</p>
-              <p>Email: hello@example.com</p>
+              <p>University of Lucknow</p>
+              <p>Email: <a href="mailto:afreenaurshi.creates@gmail.com">afreenaurshi.creates@gmail.com</a></p>
+              <p>Afreen Aurshi: <a href="https://afreen.tech" target="_blank" rel="noopener noreferrer">afreen.tech</a></p>
             </address>
           </div>
 
           {/* Column 4 */}
           <div className="footer-col">
-            <h3 className="footer-subheading">Follow Us</h3>
+            <h3 className="footer-subheading">Social & Professional</h3>
             <div className="footer-socials">
-              <button className="social-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-                </svg></button>
-              <button className="social-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2">
-                  <path
-                    d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5 2.8 11.5 5 10c-2.8-2-3-5.2-1-8C5.5 4 10.5 5.5 14 5.5c-.8-3.4 3-5 5-3.5 1.5-1 3.5-1.5 3.5-1.5z" />
-                </svg></button>
-              <button className="social-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2">
-                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-                </svg></button>
-              <button className="social-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2">
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-                  <rect width="4" height="12" x="2" y="9" />
-                  <circle cx="4" cy="4" r="2" />
-                </svg></button>
+              <a href="https://www.linkedin.com/in/afreen-aurshi-60477b331/" target="_blank" rel="noopener noreferrer" className="social-btn" title="LinkedIn">
+                <Linkedin size={20} />
+              </a>
+              <a href="https://github.com/arshiafreen090" target="_blank" rel="noopener noreferrer" className="social-btn" title="GitHub">
+                <Github size={20} />
+              </a>
+              <a href="https://x.com/afreenaurshi" target="_blank" rel="noopener noreferrer" className="social-btn" title="X (Twitter)">
+                <Twitter size={20} />
+              </a>
+              <a href="https://www.fiverr.com/afreen_creates_?public_mode=true" target="_blank" rel="noopener noreferrer" className="social-btn" title="Fiverr">
+                <Briefcase size={20} />
+              </a>
+              <a href="mailto:afreenaurshi.creates@gmail.com" className="social-btn" title="Email">
+                <Mail size={20} />
+              </a>
             </div>
           </div>
 
