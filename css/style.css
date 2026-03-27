@@ -1992,6 +1992,10 @@ section {
   margin-bottom: 24px;
 }
 
+.footer-address a {
+  text-decoration: none;
+}
+
 .footer-address {
   font-style: normal;
 }
@@ -2139,6 +2143,7 @@ section {
 }
 
 .creator-name {
+  text-decoration: none;
   font-weight: bold;
   font-size: 16px;
   /* Reduced by 10px */
