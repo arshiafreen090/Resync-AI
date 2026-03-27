@@ -37,7 +37,6 @@ export default function Footer() {
             <address className="footer-address">
               <p>University of Lucknow</p>
               <p>Email: <a href="mailto:afreenaurshi.creates@gmail.com">afreenaurshi.creates@gmail.com</a></p>
-              <p>Afreen Aurshi: <a href="https://afreen.tech" target="_blank" rel="noopener noreferrer">afreen.tech</a></p>
             </address>
           </div>
 
@@ -71,7 +70,7 @@ export default function Footer() {
             © 2026 - All rights reserved, Resync ai
           </div>
           <div className="footer-creator">
-            Built with care by <span className="creator-name">Afreen Aurshi</span>
+            Built with care by <a href="https://afreen.tech" target="_blank" rel="noopener noreferrer" className="creator-name">Afreen Aurshi</a>
           </div>
           <div className="footer-legal">
             <a href="#">Privacy Policy</a>
