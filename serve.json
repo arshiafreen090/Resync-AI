@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+        {
+            "source": "/",
+            "destination": "/resync-ai-landing.html"
+        }
+    ]
+}
