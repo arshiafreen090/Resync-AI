@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = Field(default="")
     STRIPE_PRO_PRICE_ID: str = Field(default="")
 
+    # ── n8n Job Hunt ──
+    N8N_WEBHOOK_URL: str = Field(default="")
+    N8N_INTERNAL_KEY: str = Field(default="")
+
     # ── App Config ──
     FRONTEND_URL: str = Field(default="http://localhost:3000")
     MAX_JD_LENGTH: int = Field(default=8000)

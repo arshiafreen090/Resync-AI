@@ -1,208 +1,238 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, X, Wand2, Edit2, AlertCircle } from 'lucide-react'
+import { Check, Edit2, Loader2, Wand2, X } from 'lucide-react'
 import StepIndicator from '@/components/tailor/StepIndicator'
 import SectionProgress from '@/components/tailor/SectionProgress'
 import { useTailorStore } from '@/store/tailorStore'
-import { KeywordDecision } from '@/types'
+import { apiCall } from '@/lib/api'
+import type { KeywordDecision } from '@/types'
+import { CheckCircle2 } from 'lucide-react'
 
-// MOCK DATA IMPORT / INJECTION
-const MOCK_KEYWORDS: KeywordDecision[] = [
-  {
-    id: 'k1',
-    session_id: 'sess_1',
-    keyword: 'Product Management',
-    match_type: 'contextual',
-    user_decision: 'pending',
-    original_bullet: null,
-    modified_bullet: null,
-    added_bullet: null,
-    clarifying_question: "Did you manage product roadmaps, coordinate with engineering teams, or make product decisions in any role?",
-    placement: "Product Manager — Google",
-    section: "experience",
-    reasoning: null,
-    clarifying_answer: null
-  },
-  {
-    id: 'k2',
-    session_id: 'sess_1',
-    keyword: 'Machine Learning',
-    match_type: 'modification',
-    user_decision: 'pending',
-    original_bullet: "Developed predictive algorithms to analyze user behavior patterns and improve recommendation systems for e-commerce platform.",
-    modified_bullet: "Developed machine learning algorithms to analyze user behavior patterns and improve recommendation systems for e-commerce platform.",
-    reasoning: "Original mentions 'predictive algorithms' which directly relates to ML. Making the connection explicit aligns with ATS requirements.",
-    placement: "Google SWE Intern",
-    section: "experience",
-    added_bullet: null,
-    clarifying_question: null,
-    clarifying_answer: null
-  },
-  {
-    id: 'k3',
-    session_id: 'sess_1',
-    keyword: 'Data Analysis, SQL',
-    match_type: 'addition',
-    user_decision: 'pending',
-    original_bullet: "Analyzed customer feedback and market trends to identify product improvement opportunities.",
-    modified_bullet: "Performed comprehensive data analysis using SQL to analyze customer feedback and market trends, identifying opportunities for product improvements.",
-    added_bullet: "Leveraged advanced SQL queries and data analysis techniques to extract insights from large datasets, supporting data-driven decision making across teams.",
-    placement: "Flipkart Product Intern",
-    section: "experience",
-    reasoning: null,
-    clarifying_question: null,
-    clarifying_answer: null
-  },
-  {
-    id: 'k4',
-    session_id: 'sess_1',
-    keyword: 'Kubernetes, Docker',
-    match_type: 'not_applicable',
-    user_decision: 'pending',
-    reasoning: "DevOps technologies not mentioned or implied anywhere in resume including work experience, skills, or education.",
-    section: "skills",
-    original_bullet: null, modified_bullet: null, added_bullet: null,
-    placement: null, clarifying_question: null, clarifying_answer: null
-  }
+const SECTIONS = [
+  { id: 'experience', label: 'Experience' },
+  { id: 'skills', label: 'Skills' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'education', label: 'Education' },
+  { id: 'done', label: 'Done' },
 ]
 
 export default function KeywordReviewPage() {
   const router = useRouter()
-  const [localKeywords, setLocalKeywords] = useState<KeywordDecision[]>([])
+  const { sessionId } = useTailorStore()
+
+  const [keywords, setKeywords] = useState<KeywordDecision[]>([])
   const [activeSection, setActiveSection] = useState('experience')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [shakingId, setShakingId] = useState<string | null>(null)
-  
-  const SECTIONS = [
-    { id: 'personal', label: 'Personal' },
-    { id: 'education', label: 'Education' },
-    { id: 'experience', label: 'Experience' },
-    { id: 'skills', label: 'Skills' },
-    { id: 'projects', label: 'Projects' },
-    { id: 'done', label: 'Done' }
-  ]
+  const [finalizingId, setFinalizingId] = useState<string | null>(null)
+  const [isFinalizing, setIsFinalizing] = useState(false)
+  const answerRefs = useRef<Record<string, string>>({})
 
   useEffect(() => {
-    // Inject Mock
-    setLocalKeywords(MOCK_KEYWORDS)
-  }, [])
+    if (!sessionId) {
+      router.replace('/tailor')
+      return
+    }
 
-  const handleDecision = (id: string, decision: 'accepted' | 'rejected', answer?: string) => {
-    if (decision === 'accepted') {
-      const kw = localKeywords.find(k => k.id === id)
-      if (kw?.match_type === 'contextual' && !answer?.trim()) {
+    apiCall(`/sessions/${sessionId}/keywords`)
+      .then((data) => setKeywords(data.keywords))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [sessionId])
+
+  const sendDecision = async (
+    id: string,
+    decision: 'accepted' | 'rejected',
+    answer?: string,
+  ) => {
+    const kw = keywords.find((k) => k.id === id)
+    if (!kw) return
+
+    // Contextual requires answer
+    if (decision === 'accepted' && kw.match_type === 'contextual') {
+      const ans = answer || answerRefs.current[id] || ''
+      if (!ans.trim()) {
         setShakingId(id)
         setTimeout(() => setShakingId(null), 500)
         return
       }
     }
-    
-    // Animation state
-    const cardEl = document.getElementById(`kw-card-${id}`)
-    if (cardEl) {
-      cardEl.classList.add(decision === 'accepted' ? 'anim-accept' : 'anim-reject')
-      setTimeout(() => {
-        setLocalKeywords(prev => prev.map(k => k.id === id ? { ...k, user_decision: decision, clarifying_answer: answer || null } : k))
-      }, 300)
+
+    setFinalizingId(id)
+    try {
+      await apiCall(`/sessions/${sessionId}/keywords/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          decision,
+          clarifying_answer: answer || answerRefs.current[id] || null,
+        }),
+      })
+
+      // Animate out, then update state
+      const cardEl = document.getElementById(`kw-card-${id}`)
+      if (cardEl) {
+        cardEl.classList.add(decision === 'accepted' ? 'anim-accept' : 'anim-reject')
+        setTimeout(() => {
+          setKeywords((prev) =>
+            prev.map((k) =>
+              k.id === id ? { ...k, user_decision: decision } : k,
+            ),
+          )
+        }, 300)
+      } else {
+        setKeywords((prev) =>
+          prev.map((k) => (k.id === id ? { ...k, user_decision: decision } : k)),
+        )
+      }
+    } catch (err: any) {
+      console.error('Decision failed:', err.message)
+    } finally {
+      setFinalizingId(null)
     }
   }
 
-  const handleFixAI = (id: string) => {
+  const handleFixWithAI = async (id: string) => {
     const cardEl = document.getElementById(`kw-card-${id}`)
-    if (cardEl) {
-      cardEl.classList.add('ai-loading')
-      setTimeout(() => {
-        cardEl.classList.remove('ai-loading')
-        // Mock transform to Modification
-        setLocalKeywords(prev => prev.map(k => k.id === id ? { 
-          ...k, 
-          match_type: 'modification', 
-          modified_bullet: 'AI has completely rewritten this bullet combining your context with optimal keywords.',
-          reasoning: 'Re-written directly by AI assistant using user context.',
-        } as KeywordDecision : k))
-      }, 1500)
+    if (cardEl) cardEl.classList.add('ai-loading')
+
+    try {
+      // Re-fetch keywords after AI reclassification (backend would update)
+      // For now: treat as a modification with a new modified_bullet
+      setKeywords((prev) =>
+        prev.map((k) =>
+          k.id === id
+            ? { ...k, match_type: 'modification', modified_bullet: 'AI is regenerating this suggestion. Please refresh or wait.' }
+            : k,
+        ),
+      )
+    } finally {
+      if (cardEl) cardEl.classList.remove('ai-loading')
+    }
+  }
+
+  const handleFinishReview = async () => {
+    setIsFinalizing(true)
+    try {
+      await apiCall(`/sessions/${sessionId}/finalize`, { method: 'POST' })
+      router.push('/tailor/loading?step=finalize')
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsFinalizing(false)
     }
   }
 
   const handleNextSection = () => {
-    const currentIdx = SECTIONS.findIndex(s => s.id === activeSection)
-    if (currentIdx < SECTIONS.length - 1) {
-      const next = SECTIONS[currentIdx + 1]
+    const idx = SECTIONS.findIndex((s) => s.id === activeSection)
+    if (idx < SECTIONS.length - 1) {
+      const next = SECTIONS[idx + 1]
       setActiveSection(next.id)
       if (next.id === 'done') {
-        router.push('/tailor/editor')
+        handleFinishReview()
       }
     }
   }
 
-  const sectionKeywords = localKeywords.filter(k => k.section === activeSection && k.user_decision === 'pending')
-  const isSectionComplete = sectionKeywords.length === 0 && activeSection !== 'done'
-  
-  const totalDecided = localKeywords.filter(k => k.user_decision !== 'pending').length
-  const progressPercent = localKeywords.length > 0 ? (totalDecided / localKeywords.length) * 100 : 0
+  const sectionKeywords = keywords.filter(
+    (k) => k.section === activeSection && k.user_decision === 'pending',
+  )
+  const isSectionComplete = sectionKeywords.length === 0
+
+  const totalDecided = keywords.filter((k) => k.user_decision !== 'pending').length
+  const progressPercent =
+    keywords.length > 0 ? (totalDecided / keywords.length) * 100 : 0
+  const rejectedCount = keywords.filter((k) => k.user_decision === 'rejected').length
+
+  if (loading) {
+    return (
+      <div className="loading-center">
+        <Loader2 size={40} className="spinner" color="var(--blue)" />
+        <p className="subtext-muted margin-t-16">Loading keyword decisions...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="loading-center">
+        <p className="text-red margin-b-16">{error}</p>
+        <button className="btn-ink-pill" onClick={() => router.push('/tailor')}>Start Over →</button>
+      </div>
+    )
+  }
 
   return (
     <div className="tailor-flow-wrapper">
       <StepIndicator currentStep={3} title="Keyword Review" />
 
-      <SectionProgress 
-        sections={SECTIONS.map(s => ({
+      <SectionProgress
+        sections={SECTIONS.map((s) => ({
           ...s,
-          status: activeSection === s.id ? 'active' : 'upcoming' // simplified state
-        }))} 
-        currentSection={activeSection} 
+          status: activeSection === s.id ? 'active' : 'upcoming',
+        }))}
+        currentSection={activeSection}
         onSectionClick={(id) => setActiveSection(id)}
       />
 
       <div className="current-section-header">
-         <div className="text-14-semi">Currently reviewing: {activeSection.toUpperCase()}</div>
+        <div className="text-14-semi">Reviewing: {activeSection.toUpperCase()}</div>
       </div>
 
       <div className="keyword-cards-container">
-        
-        {isSectionComplete && (
+        {isSectionComplete && activeSection !== 'done' && (
           <div className="section-complete-banner">
-             <CheckCircle2 size={48} color="var(--green)" className="margin-b-16" />
-             <h3 className="instrument-title-28 margin-b-24">Section Complete ✓</h3>
-             <button className="btn-blue-filled" onClick={handleNextSection}>Continue to Next Section →</button>
+            <CheckCircle2 size={48} color="var(--green)" className="margin-b-16" />
+            <h3 className="instrument-title-28 margin-b-24">Section Complete ✓</h3>
+            <button className="btn-blue-filled" onClick={handleNextSection}>
+              Continue to Next Section →
+            </button>
           </div>
         )}
 
-        {sectionKeywords.map(kw => {
-          
+        {sectionKeywords.map((kw) => {
+          const isProcessing = finalizingId === kw.id
+
           if (kw.match_type === 'contextual') {
             return (
               <div key={kw.id} id={`kw-card-${kw.id}`} className="kw-card type-contextual">
                 <div className="kw-header-row">
                   <div>
-                    <div className="kw-label-muted">KEYWORDS PENDING CONFIRMATION</div>
-                    <div className="kw-title-flex"><div className="orange-dot-pulse"/> {kw.keyword}</div>
+                    <div className="kw-label-muted">NEEDS YOUR CONFIRMATION</div>
+                    <div className="kw-title-flex"><div className="orange-dot-pulse" /> {kw.keyword}</div>
                   </div>
                   <div className="kw-badge orange">◎ CONTEXTUAL MATCH</div>
                 </div>
-                <div className="kw-placement">PLACEMENT: {kw.placement}</div>
-                <hr className="kw-divider"/>
+                {kw.placement && <div className="kw-placement">PLACEMENT: {kw.placement}</div>}
+                <hr className="kw-divider" />
                 <div className="kw-box beige">
                   <div className="font-bold-12 ink margin-b-6">Clarifying Question:</div>
                   <div className="text-14 muted">{kw.clarifying_question}</div>
                 </div>
-                <textarea 
+                <textarea
                   className={`kw-textarea ${shakingId === kw.id ? 'shake-anim' : ''}`}
-                  placeholder="Please provide details about your experience with these keywords..."
-                  onChange={(e) => {
-                    // Updating state per char would re-render; using generic uncontrolled ref for MVP
-                    kw.clarifying_answer = e.target.value
-                  }}
+                  placeholder="Describe your experience with this keyword..."
+                  onChange={(e) => { answerRefs.current[kw.id] = e.target.value }}
                 />
                 <div className="kw-action-row">
-                  <button className="btn-outline-red" onClick={() => handleDecision(kw.id, 'rejected')}><X size={14}/> Reject</button>
+                  <button className="btn-outline-red" onClick={() => sendDecision(kw.id, 'rejected')} disabled={isProcessing}>
+                    <X size={14} /> Reject
+                  </button>
                   <div className="flex-row-center gap-10">
-                    <button className="btn-outline-blue" onClick={() => handleFixAI(kw.id)}><Wand2 size={14}/> Fix with AI</button>
-                    <button className="btn-blue-filled" onClick={() => handleDecision(kw.id, 'accepted', kw.clarifying_answer || '')}>Yes →</button>
+                    <button className="btn-outline-blue" onClick={() => handleFixWithAI(kw.id)} disabled={isProcessing}>
+                      <Wand2 size={14} /> Fix with AI
+                    </button>
+                    <button
+                      className="btn-blue-filled"
+                      onClick={() => sendDecision(kw.id, 'accepted', answerRefs.current[kw.id] || '')}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? <Loader2 size={14} className="spinner" /> : 'Yes →'}
+                    </button>
                   </div>
                 </div>
-                <div className="ai-overlay"><Loader2 className="spinner margin-b-12" size={32} color="var(--blue)" /> AI is generating a suggestion...</div>
               </div>
             )
           }
@@ -212,36 +242,41 @@ export default function KeywordReviewPage() {
               <div key={kw.id} id={`kw-card-${kw.id}`} className="kw-card type-modification">
                 <div className="kw-header-row">
                   <div>
-                    <div className="kw-label-muted">KEYWORDS MODIFIED</div>
-                    <div className="kw-title-flex"><div className="blue-dot"/> {kw.keyword}</div>
+                    <div className="kw-label-muted">BULLET REWRITE</div>
+                    <div className="kw-title-flex"><div className="blue-dot" /> {kw.keyword}</div>
                   </div>
                   <div className="kw-badge blue">✎ MODIFICATION</div>
                 </div>
-                <div className="kw-placement">PLACEMENT: {kw.placement}</div>
-                
+                {kw.placement && <div className="kw-placement">PLACEMENT: {kw.placement}</div>}
+
                 <div className="kw-box grey margin-b-12">
-                  <div className="font-bold-11 uppercase muted margin-b-8">Original Bullet:</div>
+                  <div className="font-bold-11 uppercase muted margin-b-8">Original:</div>
                   <div className="text-14 italic muted">{kw.original_bullet}</div>
                 </div>
 
                 <div className="kw-box blue-tint margin-b-16">
                   <div className="flex-row-center gap-8 margin-b-8">
-                     <CheckCircle2 size={14} color="var(--blue)" />
-                     <div className="font-bold-11 uppercase blue-text">Modified Bullet</div>
+                    <CheckCircle2 size={14} color="var(--blue)" />
+                    <div className="font-bold-11 uppercase blue-text">Modified Version</div>
                   </div>
                   <div className="text-14 ink">{kw.modified_bullet}</div>
                 </div>
 
-                <div className="kw-reasoning">
-                  <div className="font-bold-10 uppercase muted margin-b-6">REASONING:</div>
-                  <div className="text-13 muted">{kw.reasoning}</div>
-                </div>
+                {kw.reasoning && (
+                  <div className="kw-reasoning">
+                    <div className="font-bold-10 uppercase muted margin-b-6">REASONING:</div>
+                    <div className="text-13 muted">{kw.reasoning}</div>
+                  </div>
+                )}
 
                 <div className="kw-action-row">
-                  <button className="btn-outline-red" onClick={() => handleDecision(kw.id, 'rejected')}><X size={14}/> Reject</button>
+                  <button className="btn-outline-red" onClick={() => sendDecision(kw.id, 'rejected')} disabled={isProcessing}>
+                    <X size={14} /> Reject
+                  </button>
                   <div className="flex-row-center gap-10">
-                    <button className="btn-outline-blue"><Edit2 size={14}/> Edit</button>
-                    <button className="btn-blue-filled" onClick={() => handleDecision(kw.id, 'accepted')}>✓ Accept Revision</button>
+                    <button className="btn-blue-filled" onClick={() => sendDecision(kw.id, 'accepted')} disabled={isProcessing}>
+                      {isProcessing ? <Loader2 size={14} className="spinner" /> : <><Check size={14} /> Accept</>}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -249,85 +284,87 @@ export default function KeywordReviewPage() {
           }
 
           if (kw.match_type === 'addition') {
-             return (
-               <div key={kw.id} id={`kw-card-${kw.id}`} className="kw-card type-addition">
-                 <div className="kw-header-row">
-                   <div>
-                     <div className="kw-label-muted">NEW CONTENT</div>
-                     <div className="kw-title-flex"><div className="purple-dot"/> {kw.keyword}</div>
-                   </div>
-                   <div className="kw-badge purple">+ ADDITION / MODIFICATION</div>
-                 </div>
-                 
-                 <div className="kw-box green-tint margin-b-16">
-                   <div className="font-bold-11 uppercase green-text margin-b-8">+ Addition — New Bullet Point:</div>
-                   <div className="text-14 ink">{kw.added_bullet}</div>
-                 </div>
- 
-                 <div className="kw-action-row">
-                   <div className="flex-row-center gap-10">
-                     <button className="btn-outline-red" onClick={() => handleDecision(kw.id, 'rejected')}><X size={14}/> Reject</button>
-                     <button className="btn-outline-blue"><Edit2 size={14}/> Edit</button>
-                   </div>
-                   <div className="flex-row-center gap-10">
-                     <button className="btn-purple-filled" onClick={() => handleDecision(kw.id, 'accepted')}>Accept Modification</button>
-                     <button className="btn-green-filled" onClick={() => handleDecision(kw.id, 'accepted')}>Accept Addition</button>
-                   </div>
-                 </div>
-               </div>
-             )
+            return (
+              <div key={kw.id} id={`kw-card-${kw.id}`} className="kw-card type-addition">
+                <div className="kw-header-row">
+                  <div>
+                    <div className="kw-label-muted">NEW BULLET POINT</div>
+                    <div className="kw-title-flex"><div className="purple-dot" /> {kw.keyword}</div>
+                  </div>
+                  <div className="kw-badge purple">+ ADDITION</div>
+                </div>
+
+                <div className="kw-box green-tint margin-b-16">
+                  <div className="font-bold-11 uppercase green-text margin-b-8">+ New Bullet:</div>
+                  <div className="text-14 ink">{kw.added_bullet}</div>
+                </div>
+
+                <div className="kw-action-row">
+                  <button className="btn-outline-red" onClick={() => sendDecision(kw.id, 'rejected')} disabled={isProcessing}>
+                    <X size={14} /> Reject
+                  </button>
+                  <button className="btn-green-filled" onClick={() => sendDecision(kw.id, 'accepted')} disabled={isProcessing}>
+                    {isProcessing ? <Loader2 size={14} className="spinner" /> : <><Check size={14} /> Accept Addition</>}
+                  </button>
+                </div>
+              </div>
+            )
           }
 
           if (kw.match_type === 'not_applicable') {
-             return (
-               <div key={kw.id} id={`kw-card-${kw.id}`} className="kw-card type-not_applicable">
-                 <div className="kw-header-row">
-                   <div>
-                     <div className="kw-label-muted">SKIPPED KEYWORDS</div>
-                     <div className="kw-title-flex"><div className="red-dot"/> {kw.keyword}</div>
-                   </div>
-                   <div className="kw-badge red">⊗ NOT APPLICABLE</div>
-                 </div>
-                 <div className="kw-placement muted margin-b-16">Integration Strategy: ✗ Not Applicable · Placement: N/A</div>
-                 
-                 <div className="kw-box grey margin-b-16">
-                   <div className="font-bold-12 ink margin-b-6">Reasoning:</div>
-                   <div className="text-14 muted">{kw.reasoning}</div>
-                 </div>
- 
-                 <div className="kw-action-row">
-                   <button className="btn-outline-red" onClick={() => handleDecision(kw.id, 'rejected')}><X size={14}/> Reject</button>
-                   <button className="btn-outline-blue" onClick={() => handleFixAI(kw.id)}><Wand2 size={14}/> Fix with AI</button>
-                 </div>
-                 <div className="ai-overlay"><Loader2 className="spinner margin-b-12" size={32} color="var(--blue)" /> AI is checking alternatives...</div>
-               </div>
-             )
+            return (
+              <div key={kw.id} id={`kw-card-${kw.id}`} className="kw-card type-not_applicable">
+                <div className="kw-header-row">
+                  <div>
+                    <div className="kw-label-muted">NOT IN YOUR BACKGROUND</div>
+                    <div className="kw-title-flex"><div className="red-dot" /> {kw.keyword}</div>
+                  </div>
+                  <div className="kw-badge red">⊗ NOT APPLICABLE</div>
+                </div>
+
+                {kw.reasoning && (
+                  <div className="kw-box grey margin-b-16">
+                    <div className="font-bold-12 ink margin-b-6">Why:</div>
+                    <div className="text-14 muted">{kw.reasoning}</div>
+                  </div>
+                )}
+
+                <div className="kw-action-row">
+                  <button className="btn-outline-red" onClick={() => sendDecision(kw.id, 'rejected')} disabled={isProcessing}>
+                    <X size={14} /> Skip
+                  </button>
+                  <button className="btn-outline-blue" onClick={() => handleFixWithAI(kw.id)} disabled={isProcessing}>
+                    <Wand2 size={14} /> Try AI Alternative
+                  </button>
+                </div>
+              </div>
+            )
           }
-          
+
+          return null
         })}
       </div>
 
       <div className="sticky-bottom-progress-bar">
-         <div className="flex-between margin-b-10">
-            <span className="text-14-semi">Keywords Integrated: {totalDecided} / {localKeywords.length}</span>
-            <div className="pill-tabs flex-row-center gap-8">
-              <span className="pill-tab active">Active {localKeywords.length - totalDecided}</span>
-              <span className="pill-tab-muted">Matched {totalDecided}</span>
-              <span className="pill-tab-muted">Rejected 0</span>
-            </div>
-         </div>
-         <div className="progress-bar-container margin-b-10">
-            <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }} />
-         </div>
-         <div className="flex-between muted text-13">
-            <button className="btn-text-muted" disabled>← Previous Section</button>
-            <span>Section {SECTIONS.findIndex(s => s.id === activeSection) + 1} of 6</span>
-            <button className="btn-text-blue" disabled={!isSectionComplete} onClick={handleNextSection}>Next Section →</button>
-         </div>
+        <div className="flex-between margin-b-10">
+          <span className="text-14-semi">Keywords Reviewed: {totalDecided} / {keywords.length}</span>
+          <div className="pill-tabs flex-row-center gap-8">
+            <span className="pill-tab active">Pending {keywords.length - totalDecided}</span>
+            <span className="pill-tab-muted">Accepted {totalDecided - rejectedCount}</span>
+            <span className="pill-tab-muted">Rejected {rejectedCount}</span>
+          </div>
+        </div>
+        <div className="progress-bar-container margin-b-10">
+          <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }} />
+        </div>
+        <div className="flex-between muted text-13">
+          <button className="btn-text-muted" disabled>← Previous</button>
+          <span>Section {SECTIONS.findIndex((s) => s.id === activeSection) + 1} of {SECTIONS.length}</span>
+          <button className="btn-text-blue" disabled={!isSectionComplete} onClick={handleNextSection}>
+            {isFinalizing ? <Loader2 size={14} className="spinner" /> : 'Next Section →'}
+          </button>
+        </div>
       </div>
-
     </div>
   )
 }
-// Import Loader2 for spinner
-import { Loader2 } from 'lucide-react'

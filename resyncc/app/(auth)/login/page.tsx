@@ -15,13 +15,16 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const nextPath = searchParams?.get('next') || '/tailor'
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.push('/dashboard')
+        router.push(nextPath)
       }
     })
-  }, [router, supabase.auth])
+  }, [router, supabase.auth, nextPath])
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true)
@@ -29,7 +32,7 @@ export default function LoginPage() {
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/dashboard'
+          redirectTo: window.location.origin + '/auth/callback?next=' + encodeURIComponent(nextPath)
         }
       })
     } catch (err) {
@@ -53,7 +56,7 @@ export default function LoginPage() {
     if (error) {
       setMessage({ text: error.message, isError: true })
     } else {
-      router.push('/dashboard')
+      router.push(nextPath)
     }
   }
 
