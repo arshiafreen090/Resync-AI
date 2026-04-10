@@ -13,10 +13,10 @@ const PROTECTED_PREFIXES = [
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
-  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))
 
-  if (!isProtected) return NextResponse.next()
-
+  // ALWAYS create a response and refresh the session.
+  // This is critical for Supabase SSR — it writes the refreshed
+  // auth cookies to every outgoing response.
   let response = NextResponse.next({
     request: { headers: request.headers },
   })
@@ -30,10 +30,8 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          response = NextResponse.next({
-            request,
-          })
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          response = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options as any)
           )
@@ -42,26 +40,43 @@ export async function middleware(request: NextRequest) {
     },
   )
 
+  // Calling getSession() causes the middleware to refresh the auth token
+  // and write updated cookies. Must be called before any redirect.
   const {
     data: { session },
   } = await supabase.auth.getSession()
 
-  if (!session) {
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))
+
+  // If authenticated user visits the landing page, send them to dashboard
+  if (pathname === '/' && session) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // Bypass all auth protection completely
+  return response
+
+  // If unauthenticated user tries to access a protected route, redirect to login
+  /*
+  if (!session && isProtected) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
+  */
 
   return response
 }
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/tailor/:path*',
-    '/resumes/:path*',
-    '/history/:path*',
-    '/subscription/:path*',
-    '/settings/:path*',
+    /*
+     * Match all request paths EXCEPT:
+     * - _next/static (static files)
+     * - _next/image (image optimization)
+     * - favicon.ico
+     * - public assets
+     */
+    '/((?!_next/static|_next/image|favicon.ico|assets/|images/|dashboard-preview/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function CTA() {
   return (
     <>
@@ -7,14 +9,14 @@ export default function CTA() {
           <h2 className="cta-headline">Stop sending resumes that don&apos;t get read.</h2>
           <p className="cta-sub">Join 50,000+ job seekers who tailored their way to interviews.</p>
           <div className="cta-actions">
-            <a href="#" className="btn-cta-primary">
+            <Link href="/dashboard" className="btn-cta-primary">
               <span className="btn-text">Get tailored resume</span>
               <span className="btn-arrow-icon">→</span>
-            </a>
-            <a href="#" className="btn-cta-ghost">
-              <span className="btn-text">See a Demo</span>
+            </Link>
+            <Link href="#pricing" className="btn-cta-ghost">
+              <span className="btn-text">See pricing</span>
               <span className="btn-arrow-icon">→</span>
-            </a>
+            </Link>
           </div>
           <span className="hero-note" style={{display:'block', marginTop:'20px', opacity:0.6, color:'white', fontSize:'13px'}}>No
             credit card required · Free forever plan</span>

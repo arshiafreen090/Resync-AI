@@ -1,149 +1,77 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import {
-  LayoutGrid,
-  Wand2,
-  Search,
-  FileText,
-  Clock,
-  Settings,
-  X
-} from 'lucide-react'
-import { useToast } from '../ui/Toast'
-import UserCard from './UserCard'
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { LayoutGrid, Wand2, FileStack, BarChart3, Briefcase, Settings2, Sparkles } from 'lucide-react';
+import { MOCK_USER } from '@/lib/mock-data';
 
-export default function Sidebar({
-  mobileOpen,
-  setMobileOpen,
-  user,
-}: {
-  mobileOpen: boolean
-  setMobileOpen: (b: boolean) => void
-  user: any
-}) {
-  const pathname = usePathname()
-  const { showToast } = useToast()
+export function Sidebar() {
+  const pathname = usePathname();
 
-  const handleJobHuntClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    showToast('Job Hunt launches after Mode 1 is complete!', 'info')
-  }
-
-  const handleCoverLetterClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    showToast('Cover Letters coming soon', 'info')
-  }
-
-  // Mocking recent db fetching until passed as props
-  const recentResumes = [
-    { title: 'Google_SWE_Final.pdf', score: 85 },
-    { title: 'PM_Startup_Resume.docx', score: 55 },
-  ]
-  const recentSessions = [
-    { company: 'Google', delta: '+25pts' },
-    { company: 'OpenAI', delta: '+15pts' },
-  ]
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'score-pill-excellent'
-    if (score >= 60) return 'score-pill-good'
-    return 'score-pill-poor'
-  }
+  const navItems = [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+    { name: 'Tailor Resume', href: '/dashboard/tailor', icon: Wand2 },
+    { name: 'My Resumes', href: '/dashboard/resumes', icon: FileStack },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+    { name: 'Job Hunt', href: '/dashboard/job-hunt', icon: Briefcase },
+    { name: 'Account Settings', href: '/dashboard/settings', icon: Settings2 },
+  ];
 
   return (
-    <>
-      <div className={`sidebar-backdrop ${mobileOpen ? 'open' : ''}`} onClick={() => setMobileOpen(false)} />
-      <aside className={`dashboard-sidebar ${mobileOpen ? 'open' : ''}`}>
-        
-        <div className="sidebar-top">
-          <Link href="/dashboard" className="sidebar-logo">
-            <div className="sidebar-logo-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 2L2 12l10 10 10-10L12 2zM12 22v-10" />
-              </svg>
-            </div>
-            <span>Resync AI</span>
-          </Link>
-          <button className="close-sidebar-btn" onClick={() => setMobileOpen(false)}>
-            <X size={20} color="white" />
-          </button>
+    <aside className="hidden md:flex flex-col w-[240px] h-full bg-white border-r border-[#E2E8F0]">
+      {/* Top Section */}
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-[34px] h-[34px] bg-ink rounded-xl flex items-center justify-center text-white">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <span className="font-serif text-lg font-semibold tracking-tight text-ink">Resync AI</span>
         </div>
 
-        <nav className="sidebar-nav">
-          <div className="nav-section">
-            <div className="section-label">MAIN</div>
-            <Link
-              href="/dashboard"
-              className={`nav-item ${pathname === '/dashboard' ? 'active' : ''}`}
-            >
-              <LayoutGrid size={18} />
-              <span>Dashboard</span>
-            </Link>
-
-            <Link
-              href="/tailor"
-              className={`nav-item ${pathname.includes('/tailor') ? 'active' : ''}`}
-            >
-              <Wand2 size={18} />
-              <span>Tailor Resume</span>
-            </Link>
-
-            <div
-              className="nav-item disabled job-hunt"
-              onClick={handleJobHuntClick}
-              title="Coming in Mode 2 🚀"
-            >
-              <Search size={18} />
-              <span>Job Hunt</span>
-            </div>
-          </div>
-
-          <div className="nav-section">
-            <div className="section-label">MY RESUMES</div>
-            {recentResumes.map((res, i) => (
-              <Link href={`/resumes/${i}`} key={i} className="nav-sub-item">
-                <span className="truncate">{res.title}</span>
-                <span className={`sidebar-score-pill ${getScoreColor(res.score)}`}>
-                  {res.score}
-                </span>
+        <div className="flex flex-col gap-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+            const Icon = item.icon;
+            
+            return (
+              <Link 
+                key={item.name}
+                href={item.href}
+                className={`flex w-full items-center justify-start gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
+                  isActive 
+                    ? 'border-l-[3px] border-brand-blue bg-brand-blue-soft text-brand-blue font-medium' 
+                    : 'text-ink/50 hover:text-ink/80 hover:bg-ink/5 border-l-[3px] border-transparent'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${isActive ? 'text-brand-blue' : 'text-ink/50'}`} />
+                <span className="text-sm">{item.name}</span>
               </Link>
-            ))}
-            <Link href="/tailor" className="nav-item-dashed">
-              + Upload New Resume
-            </Link>
-          </div>
+            );
+          })}
+        </div>
+      </div>
 
-          <div className="nav-section">
-            <div className="section-label">RECENT SESSIONS</div>
-            {recentSessions.map((sess, i) => (
-              <Link href={`/tailor/editor?session=${i}`} key={i} className="nav-sub-item">
-                <span className="truncate">{sess.company}</span>
-                <span className="delta-text">{sess.delta}</span>
-              </Link>
-            ))}
+      {/* Bottom Section */}
+      <div className="mt-auto p-6 flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-ink flex items-center justify-center text-white font-serif text-lg">
+            {MOCK_USER.avatarInitial}
           </div>
-
-          <div className="nav-section">
-            <div className="section-label">OTHER</div>
-            <div className="nav-item disabled" onClick={handleCoverLetterClick}>
-              <FileText size={18} />
-              <span>Cover Letters</span>
-            </div>
-            <Link href="/history" className="nav-item">
-              <Clock size={18} />
-              <span>History</span>
-            </Link>
-            <Link href="/settings" className="nav-item">
-              <Settings size={18} />
-              <span>Settings</span>
-            </Link>
+          <div className="flex flex-col">
+            <span className="text-[13px] font-medium text-ink">{MOCK_USER.name}</span>
+            <span className={`text-[11px] font-bold uppercase w-fit px-2 py-0.5 rounded-full mt-1 ${
+              MOCK_USER.plan === 'Pro' ? 'bg-brand-blue-soft text-brand-blue' : 'bg-ink/10 text-ink/60'
+            }`}>
+              {MOCK_USER.plan}
+            </span>
           </div>
-        </nav>
-
-        <UserCard user={user} />
-      </aside>
-    </>
-  )
+        </div>
+        <div>
+          <button className="text-[12px] text-brand-red cursor-pointer hover:underline bg-transparent border-none p-0 outline-none">
+            → Logout
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
 }

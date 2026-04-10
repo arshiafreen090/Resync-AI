@@ -39,10 +39,16 @@ export async function apiCall(
 ): Promise<any> {
   const token = await getAccessToken()
   if (!token) {
+    /*
     if (typeof window !== 'undefined') {
       window.location.href = '/login'
     }
-    throw new Error('Not authenticated')
+    */
+    // For "forget about auth" mode, we'll just log and continue, 
+    // though real requests will likely fail with 401 later.
+    console.warn('API call attempted without authentication token')
+    // throw new Error('Not authenticated') 
+    // Let's return a dummy token or just try anyway.
   }
 
   const url = path.startsWith('http')
@@ -71,10 +77,13 @@ export async function apiUpload(
 ): Promise<any> {
   const token = await getAccessToken()
   if (!token) {
+    /*
     if (typeof window !== 'undefined') {
       window.location.href = '/login'
     }
-    throw new Error('Not authenticated')
+    */
+    console.warn('API upload attempted without authentication token')
+    // throw new Error('Not authenticated')
   }
 
   const url = `${BASE_URL}${path.startsWith('/') ? path : '/' + path}`
@@ -93,10 +102,12 @@ export async function apiUpload(
 
 async function _handleResponse(res: Response): Promise<any> {
   if (res.status === 401) {
+    /*
     if (typeof window !== 'undefined') {
       window.location.href = '/login'
     }
-    throw new Error('Session expired. Please sign in again.')
+    */
+    throw new Error('Session expired or authentication required.')
   }
 
   if (res.status === 403) {

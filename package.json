@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "ReSync AI - Landing Page",
   "scripts": {
-    "dev": "npx serve . --listen 4000",
-    "start": "npx serve . --listen 4000"
+    "dev": "npm run dev --prefix resyncc",
+    "start": "npm start --prefix resyncc"
   }
 }

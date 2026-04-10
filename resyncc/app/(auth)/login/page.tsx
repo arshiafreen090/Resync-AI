@@ -16,9 +16,17 @@ export default function LoginPage() {
   const supabase = createClient()
 
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
-  const nextPath = searchParams?.get('next') || '/tailor'
-
+  const nextPath = searchParams?.get('next') || '/dashboard'
+  
   useEffect(() => {
+    if (searchParams) {
+      const err = searchParams.get('error')
+      const errDesc = searchParams.get('error_description')
+      if (err) {
+        setMessage({ text: errDesc ? decodeURIComponent(errDesc) : `Authentication failed (${err})`, isError: true })
+      }
+    }
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         router.push(nextPath)
