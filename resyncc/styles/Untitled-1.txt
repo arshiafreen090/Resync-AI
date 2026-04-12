@@ -1,0 +1,39 @@
+# 
+
+
+## Featured
+
+## Newest
+
+## Popular
+
+## Shaders
+
+## Heros
+
+## Features
+
+## AI Chat Components
+
+## Calls to Action
+
+## Buttons
+
+## Testimonials
+
+## Pricing Sections
+
+## Text Components
+[Home](https://21st.dev/)
+
+### Explore components
+
+### Build
+[1Code](https://21st.dev/1code)
+[Magic Chat](https://21st.dev/magic)
+The fastest way to build and deploy AI agents.
+[Read more](https://21st.dev/agents)
+21st is backed by Y Combinator. Excited for what's ahead!
+[Read more](https://www.ycombinator.com/companies/1code-21stdev)
+Description
+[Read more](https://21st.dev/ui-layouts/testimonial/default)

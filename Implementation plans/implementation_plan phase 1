@@ -1,0 +1,53 @@
+# ReSync AI — Implementation Plan (MVP Completion)
+
+This plan outlines the steps required to transition ReSync AI from its current partially-mocked state to a fully functional MVP.
+
+## Phase 1: Robust AI Pipeline & Data Flow (Highest Priority)
+The heart of the app needs to move beyond mock data.
+
+*   [ ] **1.1 Resume Text Extraction**
+    *   Integrate `PyMuPDF` (fitz) or `pdfplumber` in the backend to extract clean text from uploaded PDF/DOCX resumes.
+    *   Update `Resume` model to store `raw_text` upon upload.
+*   [ ] **1.2 Advanced AI Prompts**
+    *   Implement the structured JSON prompts from the TRD for:
+        *   **Parser**: Resume text → Structured JSON.
+        *   **Analyzer**: JD + Resume → Keyword gaps & ATS score.
+        *   **Optimizer**: Resume bullets → Contextual rewrites.
+*   [ ] **1.3 Results API**
+    *   Create `GET /v1/sessions/{id}/result` to return the comprehensive analysis (score, keywords, suggestions) required by the frontend.
+*   [ ] **1.4 Frontend Wiring**
+    *   Replace `MOCK_KEYWORDS` in `tailor/keywords/page.tsx` with actual data fetched from the backend.
+
+## Phase 2: Feature Parity (Job Hunt & Auth)
+Building the secondary "Job Hunt" mode and securing the platform.
+
+*   [ ] **2.1 Job Hunt API**
+    *   Create the `/v1/jobs` router.
+    *   Implement the n8n webhook trigger to send resume skills and filters to the automation workflow.
+    *   Implement the internal callback to store job results returned by n8n.
+*   [ ] **2.2 Auth Integration**
+    *   Verify and finalize Clerk/JWT middleware in FastAPI.
+    *   Ensure all dashboard routes (`/tailor`, `/jobs`, `/resumes`) are properly protected.
+*   [ ] **2.3 User Onboarding**
+    *   Ensure the "Get Started" flow correctly redirects to Signup/Signin and initializes the User record in PostgreSQL.
+
+## Phase 3: Monetization & Polish
+Preparing for launch with payments and UI refinements.
+
+*   [ ] **3.1 Stripe Integration**
+    *   Implement `/v1/subscription/checkout` to handle Stripe redirects.
+    *   Add a robust webhook handler to process `checkout.session.completed` and update user `plan` status to 'pro'.
+*   [ ] **3.2 PDF Generation v2**
+    *   Refine `generate_pdf_from_json` to produce a more professional, clean resume layout that users would actually submit to recruiters.
+*   [ ] **3.3 Dashboard Overview**
+    *   Build the main Dashboard overview page showing recent session history, quick stats (average ATS score), and suggested next steps.
+
+## Phase 4: Testing & Deployment
+*   [ ] **End-to-End Stress Test**: Run a full flow from Landing → Login → Upload → Tailor → Download.
+*   [ ] **Environment Variable Audit**: Ensure Vercel, Render, and n8n have all necessary secrets (OpenAI, Stripe, SMTP, etc.).
+*   [ ] **Final UI Audit**: Check responsiveness and accessibility across all dashboard pages.
+
+---
+
+> [!TIP]
+> **Recommended First Action:** We should start by implementing the **Resume Parsing** logic in the backend. Currently, the AI task uses "N/A" for resume text, which prevents any real analysis from happening.
