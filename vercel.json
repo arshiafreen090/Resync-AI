@@ -1,0 +1,7 @@
+{
+  "framework": "nextjs",
+  "installCommand": "cd resyncc && npm install",
+  "buildCommand": "cd resyncc && npm run build",
+  "outputDirectory": "resyncc/.next",
+  "devCommand": "cd resyncc && npm run dev"
+}
