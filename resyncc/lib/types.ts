@@ -1,5 +1,40 @@
 export type KeywordStatus = 'matched' | 'contextual' | 'pending' | 'not-applicable' | 'modified' | 'rejected';
 
+export type ProcessingStage =
+  | 'idle'
+  | 'uploading'
+  | 'analyzing'
+  | 'reviewing'
+  | 'finalizing'
+  | 'complete'
+  | 'failed';
+
+/** Keyword shape returned by GET /v1/sessions/{id}/keywords */
+export interface BackendKeyword {
+  id: string;
+  session_id: string;
+  keyword: string;
+  /** matched | modification | addition | contextual | not_applicable */
+  match_type: string;
+  /** accepted | rejected | null */
+  user_decision: string | null;
+  section: string | null;
+  placement: string | null;
+  original_bullet: string | null;
+  modified_bullet: string | null;
+  added_bullet: string | null;
+  reasoning: string | null;
+  clarifying_question: string | null;
+  clarifying_answer: string | null;
+}
+
+export interface UploadedResume {
+  id: string;
+  name: string;
+  base_ats_score: number;
+  created_at: string | null;
+}
+
 export interface Keyword {
   id: string;
   name: string;

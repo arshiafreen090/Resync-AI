@@ -3,9 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutGrid, Wand2, FileStack, BarChart3, Briefcase, Settings2, Sparkles } from 'lucide-react';
-import { MOCK_USER } from '@/lib/mock-data';
+import Image from 'next/image';
 
-export function Sidebar() {
+type UserMeta = {
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  avatarInitial: string;
+};
+
+export function Sidebar({ user }: { user: UserMeta }) {
   const pathname = usePathname();
 
   const navItems = [
@@ -54,22 +61,26 @@ export function Sidebar() {
       {/* Bottom Section */}
       <div className="mt-auto p-6 flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-ink flex items-center justify-center text-white font-serif text-lg">
-            {MOCK_USER.avatarInitial}
+          <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-ink/10 shrink-0">
+            {user.avatarUrl ? (
+              <Image
+                src={user.avatarUrl}
+                alt={user.name}
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-full h-full bg-ink flex items-center justify-center text-white font-serif text-lg">
+                {user.avatarInitial}
+              </div>
+            )}
           </div>
-          <div className="flex flex-col">
-            <span className="text-[13px] font-medium text-ink">{MOCK_USER.name}</span>
-            <span className={`text-[11px] font-bold uppercase w-fit px-2 py-0.5 rounded-full mt-1 ${
-              MOCK_USER.plan === 'Pro' ? 'bg-brand-blue-soft text-brand-blue' : 'bg-ink/10 text-ink/60'
-            }`}>
-              {MOCK_USER.plan}
-            </span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[13px] font-medium text-ink truncate">{user.name}</span>
+            <span className="text-[11px] text-ink/40 truncate">{user.email}</span>
           </div>
-        </div>
-        <div>
-          <button className="text-[12px] text-brand-red cursor-pointer hover:underline bg-transparent border-none p-0 outline-none">
-            → Logout
-          </button>
         </div>
       </div>
     </aside>

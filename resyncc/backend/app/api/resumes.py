@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, desc
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
@@ -11,6 +11,38 @@ from app.services.storage import generate_r2_signed_url
 from app.services.ai import generate_base_resume_score
 
 router = APIRouter()
+
+
+# ─────────────────────────────────────────────────────────────────────
+# GET /  — List user's uploaded resumes
+# ─────────────────────────────────────────────────────────────────────
+
+@router.get("/", summary="List all resumes for the current user")
+async def list_resumes(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Returns all resumes uploaded by the current user, newest first."""
+    stmt = (
+        select(Resume)
+        .where(Resume.user_id == current_user.id)
+        .order_by(desc(Resume.created_at))
+        .limit(20)
+    )
+    result = await db.execute(stmt)
+    resumes = result.scalars().all()
+
+    return {
+        "resumes": [
+            {
+                "id": str(r.id),
+                "name": r.name,
+                "base_ats_score": r.base_ats_score,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in resumes
+        ]
+    }
 
 
 @router.get("/{resume_id}/download")

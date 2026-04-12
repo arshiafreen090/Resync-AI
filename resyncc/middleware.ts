@@ -53,17 +53,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Bypass all auth protection completely
-  return response
-
   // If unauthenticated user tries to access a protected route, redirect to login
-  /*
   if (!session && isProtected) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
-  */
 
   return response
 }

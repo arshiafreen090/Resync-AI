@@ -1,7 +1,7 @@
 'use client';
 
 import { useDashboardStore } from '@/store/dashboard.store';
-import { MOCK_KEYWORDS } from '@/lib/mock-data';
+import { useKeywords } from '@/lib/useKeywords';
 import { KeywordCard } from './KeywordCard';
 import { useState, useEffect } from 'react';
 import { LayoutGroup } from 'framer-motion';
@@ -9,6 +9,7 @@ import { LayoutGroup } from 'framer-motion';
 export function KeywordList() {
   const [filter, setFilter] = useState<string | null>(null);
   const { keywordStatuses } = useDashboardStore();
+  const keywords = useKeywords();
 
   useEffect(() => {
     const handleFilter = (e: any) => setFilter(e.detail);
@@ -26,12 +27,12 @@ export function KeywordList() {
     return false;
   };
 
-  const filtered = MOCK_KEYWORDS.filter(kw => getFilterMatched(kw.id));
+  const filtered = keywords.filter(kw => getFilterMatched(kw.id));
 
   // TABS inside KeywordList
-  const stats = { all: MOCK_KEYWORDS.length, matched: 0, pending: 0, contextual: 0, na: 0 };
-  MOCK_KEYWORDS.forEach(k => {
-    const s = keywordStatuses[k.id];
+  const stats = { all: keywords.length, matched: 0, pending: 0, contextual: 0, na: 0 };
+  keywords.forEach(k => {
+    const s = keywordStatuses[k.id] || k.status;
     if (s === 'matched' || s === 'modified') stats.matched++;
     if (s === 'pending') stats.pending++;
     if (s === 'contextual') stats.contextual++;

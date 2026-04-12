@@ -4,28 +4,60 @@ import { useDashboardStore } from '@/store/dashboard.store';
 import { SummaryBar } from '../keyword-review/SummaryBar';
 import { KeywordList } from '../keyword-review/KeywordList';
 import { DetailPanel } from '../keyword-review/DetailPanel';
-import { MOCK_KEYWORDS } from '@/lib/mock-data';
-import { useEffect } from 'react';
+import { useKeywords } from '@/lib/useKeywords';
+import { useState } from 'react';
+import { finalizeSession, pollUntil } from '@/lib/api';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 export function Step3ReviewKeywords() {
-  const { keywordStatuses, updateKeywordStatus, setTailorStep } = useDashboardStore();
+  const {
+    keywordStatuses,
+    sessionId,
+    setTailorStep,
+    setFinalAtsScore,
+    setProcessingStage,
+  } = useDashboardStore();
 
-  useEffect(() => {
-    // Initialize statuses if empty
-    if (Object.keys(keywordStatuses).length === 0) {
-      MOCK_KEYWORDS.forEach(kw => {
-        updateKeywordStatus(kw.id, kw.status);
-      });
-    }
-  }, [keywordStatuses, updateKeywordStatus]);
+  const keywords = useKeywords();
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [finalizeError, setFinalizeError] = useState<string | null>(null);
 
-  const unresolvedCount = Object.values(keywordStatuses).filter(s => s === 'pending' || s === 'contextual').length;
-  const total = MOCK_KEYWORDS.length;
+  const unresolvedCount = keywords.filter(kw => {
+    const s = keywordStatuses[kw.id] || kw.status;
+    return s === 'pending' || s === 'contextual';
+  }).length;
+
+  const total = keywords.length;
   const resolvedPct = total > 0 ? ((total - unresolvedCount) / total) * 100 : 0;
+
+  const handleFinalize = async () => {
+    setFinalizeError(null);
+    setIsFinalizing(true);
+    try {
+      if (sessionId) {
+        setProcessingStage('finalizing');
+        await finalizeSession(sessionId);
+        await pollUntil(sessionId, ['complete'], undefined, 3000, 60);
+        setProcessingStage('complete');
+      }
+      setTailorStep(4);
+    } catch (err: any) {
+      setProcessingStage('failed');
+      setFinalizeError(err?.message || 'Finalization failed. Please try again.');
+      setIsFinalizing(false);
+    }
+  };
 
   return (
     <div className="flex flex-col max-w-5xl mx-auto w-full pt-8 pb-32">
       <SummaryBar />
+
+      {finalizeError && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4 mt-4 text-red-700 text-sm">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{finalizeError}</span>
+        </div>
+      )}
       
       <div className="flex flex-col lg:flex-row gap-6 mt-8 w-full items-start">
         <div className="w-full lg:w-[55%]">
@@ -51,15 +83,16 @@ export function Step3ReviewKeywords() {
         </div>
         
         <button
-          onClick={() => setTailorStep(4)}
-          disabled={unresolvedCount > 0}
-          className={`px-8 py-3 rounded-full font-semibold transition-all duration-200 cursor-pointer ${
-            unresolvedCount === 0 
+          onClick={handleFinalize}
+          disabled={unresolvedCount > 0 || isFinalizing}
+          className={`px-8 py-3 rounded-full font-semibold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+            unresolvedCount === 0 && !isFinalizing
               ? 'bg-ink text-white hover:bg-brand-blue hover:shadow-[0_4px_16px_rgba(26,86,255,0.4)] hover:-translate-y-[1px]' 
               : 'bg-ink/10 text-ink/30 cursor-not-allowed'
           }`}
         >
-          Complete Tailoring →
+          {isFinalizing && <Loader2 className="w-4 h-4 animate-spin" />}
+          {isFinalizing ? 'Generating your resume...' : 'Complete Tailoring →'}
         </button>
       </div>
     </div>
