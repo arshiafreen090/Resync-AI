@@ -1,7 +1,7 @@
 'use client';
 
 import { useDashboardStore } from '@/store/dashboard.store';
-import { MOCK_KEYWORDS } from '@/lib/mock-data';
+import { useKeywords } from '@/lib/useKeywords';
 import { MousePointerClick } from 'lucide-react';
 import { ContextualPanel } from './detail-panels/ContextualPanel';
 import { MatchedPanel } from './detail-panels/MatchedPanel';
@@ -10,6 +10,7 @@ import { PendingPanel } from './detail-panels/PendingPanel';
 
 export function DetailPanel() {
   const { selectedKeywordId, keywordStatuses } = useDashboardStore();
+  const keywords = useKeywords();
 
   if (!selectedKeywordId) {
     return (
@@ -22,7 +23,7 @@ export function DetailPanel() {
     );
   }
 
-  const keyword = MOCK_KEYWORDS.find(k => k.id === selectedKeywordId);
+  const keyword = keywords.find(k => k.id === selectedKeywordId);
   if (!keyword) return null;
 
   const currentStatus = keywordStatuses[keyword.id] || keyword.status;

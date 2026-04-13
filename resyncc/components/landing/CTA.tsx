@@ -1,3 +1,4 @@
+import AuthCTAButton from './AuthCTAButton'
 import Link from 'next/link'
 
 export default function CTA() {
@@ -9,10 +10,10 @@ export default function CTA() {
           <h2 className="cta-headline">Stop sending resumes that don&apos;t get read.</h2>
           <p className="cta-sub">Join 50,000+ job seekers who tailored their way to interviews.</p>
           <div className="cta-actions">
-            <Link href="/dashboard" className="btn-cta-primary">
+            <AuthCTAButton className="btn-cta-primary">
               <span className="btn-text">Get tailored resume</span>
               <span className="btn-arrow-icon">→</span>
-            </Link>
+            </AuthCTAButton>
             <Link href="#pricing" className="btn-cta-ghost">
               <span className="btn-text">See pricing</span>
               <span className="btn-arrow-icon">→</span>

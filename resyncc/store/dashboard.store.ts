@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { KeywordStatus } from '../lib/types';
+import { KeywordStatus, ProcessingStage, BackendKeyword } from '../lib/types';
 
 interface DashboardState {
   // Tailor wizard
@@ -8,7 +8,16 @@ interface DashboardState {
   selectedResumeId: string | null;
   selectedKeywordId: string | null;
   keywordStatuses: Record<string, KeywordStatus>;
-  
+
+  // Live session tracking
+  sessionId: string | null;
+  uploadedResumeId: string | null;       // DB resume_id from /upload/resume
+  sessionKeywords: BackendKeyword[];     // real keywords from /sessions/{id}/keywords
+  initialAtsScore: number | null;
+  finalAtsScore: number | null;
+  processingStage: ProcessingStage;
+  processingError: string | null;
+
   // My Resumes
   resumeTab: 'all' | 'base' | 'tailored';
   resumeSearchQuery: string;
@@ -32,6 +41,15 @@ interface DashboardState {
   selectKeyword: (id: string | null) => void;
   updateKeywordStatus: (id: string, status: KeywordStatus) => void;
   resetTailorWizard: () => void;
+
+  // Session actions
+  setSessionId: (id: string | null) => void;
+  setUploadedResumeId: (id: string | null) => void;
+  setSessionKeywords: (kws: BackendKeyword[]) => void;
+  setInitialAtsScore: (score: number | null) => void;
+  setFinalAtsScore: (score: number | null) => void;
+  setProcessingStage: (stage: ProcessingStage) => void;
+  setProcessingError: (err: string | null) => void;
   
   setResumeTab: (tab: 'all' | 'base' | 'tailored') => void;
   setResumeSearch: (query: string) => void;
@@ -53,6 +71,15 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   selectedResumeId: null,
   selectedKeywordId: null,
   keywordStatuses: {},
+
+  // Initial state — Session
+  sessionId: null,
+  uploadedResumeId: null,
+  sessionKeywords: [],
+  initialAtsScore: null,
+  finalAtsScore: null,
+  processingStage: 'idle',
+  processingError: null,
   
   // Initial state — Resumes
   resumeTab: 'all',
@@ -83,8 +110,24 @@ export const useDashboardStore = create<DashboardState>((set) => ({
     jobDescription: '',
     selectedResumeId: null,
     selectedKeywordId: null,
-    keywordStatuses: {}
+    keywordStatuses: {},
+    sessionId: null,
+    uploadedResumeId: null,
+    sessionKeywords: [],
+    initialAtsScore: null,
+    finalAtsScore: null,
+    processingStage: 'idle',
+    processingError: null,
   }),
+
+  // Session actions
+  setSessionId: (id) => set({ sessionId: id }),
+  setUploadedResumeId: (id) => set({ uploadedResumeId: id }),
+  setSessionKeywords: (kws) => set({ sessionKeywords: kws }),
+  setInitialAtsScore: (score) => set({ initialAtsScore: score }),
+  setFinalAtsScore: (score) => set({ finalAtsScore: score }),
+  setProcessingStage: (stage) => set({ processingStage: stage }),
+  setProcessingError: (err) => set({ processingError: err }),
   
   setResumeTab: (tab) => set({ resumeTab: tab }),
   setResumeSearch: (query) => set({ resumeSearchQuery: query }),

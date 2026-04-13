@@ -1,43 +1,32 @@
 'use client';
 
 import { useDashboardStore } from '@/store/dashboard.store';
-import { MOCK_KEYWORDS } from '@/lib/mock-data';
+import { useKeywords } from '@/lib/useKeywords';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { useState } from 'react';
 
 export function SummaryBar() {
-  const { keywordStatuses } = useDashboardStore();
-  
-  // Actually we need to make it filterable in the list, but we can manage local filter state in KeywordList
-  // Wait, the prompt says "Right: horizontal pill segments as filter buttons".
-  // Let's pass setActiveFilter down or manage it in Zustand if needed.
-  // Actually let's use a local event bus or Zustand to filter.
-  // We'll add filter to Zustand later if needed, or just let SummaryBar dispatch a custom event.
-  // A simpler way is to put the active filter string in Zustand. Oh, wait, the prompt says:
-  // "Clicking a segment filters the keyword list" 
-  
-  // We can just add it to Zustand: `reviewFilter: 'all'` etc. But we didn't add it in dashboard.store.ts.
-  // Let's just use window DispatchEvent for a quick hook-less connection between SummaryBar and KeywordList
-  // Or since they share a parent (Step3ReviewKeywords), we can lift state up or add to store.
-  
+  const keywords = useKeywords();
+  const { sessionId, initialAtsScore } = useDashboardStore();
+
   const stats = {
     matched: 0,
     pending: 0,
     contextual: 0,
-    'not-applicable': 0
+    'not-applicable': 0,
   };
 
-  Object.values(keywordStatuses).forEach(status => {
-    if (status === 'matched' || status === 'modified') stats.matched++;
-    if (status === 'pending') stats.pending++;
-    if (status === 'contextual') stats.contextual++;
-    if (status === 'not-applicable' || status === 'rejected') stats['not-applicable']++;
+  keywords.forEach(kw => {
+    const s = kw.status;
+    if (s === 'matched' || s === 'modified') stats.matched++;
+    if (s === 'pending') stats.pending++;
+    if (s === 'contextual') stats.contextual++;
+    if (s === 'not-applicable' || s === 'rejected') stats['not-applicable']++;
   });
 
-  const total = MOCK_KEYWORDS.length;
+  const total = keywords.length;
   const integrated = stats.matched;
   const pct = total > 0 ? Math.round((integrated / total) * 100) : 0;
-
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const toggleFilter = (f: string) => {
@@ -51,7 +40,9 @@ export function SummaryBar() {
       {/* Left */}
       <div className="flex flex-col">
         <h2 className="font-serif italic text-[32px] text-ink leading-none">{total} Keywords Found</h2>
-        <p className="text-[13px] text-ink/40 mt-2">Senior PM role at Stripe</p>
+        {initialAtsScore !== null && (
+          <p className="text-[13px] text-ink/40 mt-2">Initial ATS score: <span className="font-semibold text-ink/60">{initialAtsScore}%</span></p>
+        )}
       </div>
 
       {/* Center - Filters */}

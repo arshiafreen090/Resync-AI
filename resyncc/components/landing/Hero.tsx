@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import AuthCTAButton from './AuthCTAButton'
 
 export default function Hero() {
   return (
@@ -21,10 +21,10 @@ export default function Hero() {
       </p>
 
       <div className="hero-cta">
-        <Link href="/dashboard" className="btn-hero">
+        <AuthCTAButton className="btn-hero">
           <span className="btn-text">Get tailored resume</span>
           <span className="btn-arrow-icon">→</span>
-        </Link>
+        </AuthCTAButton>
         <span className="hero-note">No credit card required · Free forever plan</span>
       </div>
 

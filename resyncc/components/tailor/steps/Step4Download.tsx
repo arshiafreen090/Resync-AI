@@ -1,13 +1,14 @@
 'use client';
 
 import { useDashboardStore } from '@/store/dashboard.store';
-import { MOCK_KEYWORDS } from '@/lib/mock-data';
+import { useKeywords } from '@/lib/useKeywords';
 import { CountUpNumber } from '@/components/ui/CountUpNumber';
 import { BulletCompare } from '@/components/ui/BulletCompare';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Download, Loader2, AlertCircle } from 'lucide-react';
+import { downloadPdf } from '@/lib/api';
 
 function AnimatedCheckmark() {
   return (
@@ -32,15 +33,24 @@ function AnimatedCheckmark() {
 }
 
 export function Step4Download() {
-  const { keywordStatuses, resetTailorWizard, setTailorStep } = useDashboardStore();
-  
-  // Calculate mock stats
-  const total = MOCK_KEYWORDS.length;
+  const {
+    keywordStatuses,
+    resetTailorWizard,
+    sessionId,
+    initialAtsScore,
+    finalAtsScore,
+  } = useDashboardStore();
+
+  const keywords = useKeywords();
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
+  // Calculate stats
+  const total = keywords.length;
   let integrated = 0;
   let rewritten = 0;
-  let atsScore = 94; // Mock final score
 
-  const changedKeywords = MOCK_KEYWORDS.filter(kw => {
+  const changedKeywords = keywords.filter(kw => {
     const s = keywordStatuses[kw.id] || kw.status;
     if (s === 'matched' || s === 'modified') {
       integrated++;
@@ -49,6 +59,30 @@ export function Step4Download() {
     }
     return false;
   });
+
+  const displayAtsScore = finalAtsScore ?? initialAtsScore ?? 0;
+
+  const handleDownloadPdf = async () => {
+    if (!sessionId) return;
+    setPdfError(null);
+    setIsPdfLoading(true);
+    try {
+      const { url, filename } = await downloadPdf(sessionId);
+      // Open signed URL in a new tab — browser will trigger the download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err: any) {
+      setPdfError(err?.message || 'Download failed. Please try again.');
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col max-w-3xl mx-auto w-full pt-8 pb-32 text-center">
@@ -68,31 +102,46 @@ export function Step4Download() {
         <div className="bg-white rounded-2xl border border-border shadow-sm p-6 flex flex-col items-center justify-center">
           <span className="text-[12px] font-bold uppercase tracking-wider text-ink/40 mb-2">ATS Score</span>
           <div className="font-serif italic text-[40px] text-brand-green leading-none">
-            <CountUpNumber to={atsScore} suffix="%" />
+            <CountUpNumber to={displayAtsScore} suffix="%" />
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-border shadow-sm p-6 flex flex-col items-center justify-center">
           <span className="text-[12px] font-bold uppercase tracking-wider text-ink/40 mb-2">Bullets Rewritten</span>
           <div className="font-serif italic text-[40px] text-ink leading-none">
-            <CountUpNumber to={rewritten > 0 ? rewritten : 6} />
+            <CountUpNumber to={rewritten > 0 ? rewritten : 0} />
           </div>
         </div>
       </div>
 
+      {/* PDF Error */}
+      <AnimatePresence>
+        {pdfError && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-red-700 text-sm text-left"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{pdfError}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Export Buttons */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-        <button className="h-14 px-8 rounded-full bg-ink text-white font-semibold text-[15px] cursor-pointer hover:bg-brand-blue hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(26,86,255,0.4)] transition-all">
-          ⬇ Download PDF
-        </button>
-        <button className="h-14 px-8 rounded-full bg-white border border-ink text-ink font-semibold text-[15px] cursor-pointer hover:bg-brand-blue hover:text-white hover:border-brand-blue hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(26,86,255,0.4)] transition-all">
-          ⬇ Download DOCX
+        <button
+          onClick={handleDownloadPdf}
+          disabled={isPdfLoading || !sessionId}
+          className="h-14 px-8 rounded-full bg-ink text-white font-semibold text-[15px] cursor-pointer hover:bg-brand-blue hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(26,86,255,0.4)] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {isPdfLoading ? 'Generating PDF...' : 'Download PDF'}
         </button>
       </div>
 
       <button 
-        onClick={() => {
-          resetTailorWizard();
-        }}
+        onClick={() => resetTailorWizard()}
         className="text-[15px] text-ink/50 hover:text-ink underline cursor-pointer bg-transparent border-none w-fit mx-auto"
       >
         Tailor for another job →

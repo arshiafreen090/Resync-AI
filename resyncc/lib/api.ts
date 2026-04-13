@@ -12,6 +12,7 @@
  */
 
 import { createBrowserClient } from '@supabase/ssr'
+import type { BackendKeyword, UploadedResume } from './types'
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/v1'
@@ -129,3 +130,102 @@ async function _handleResponse(res: Response): Promise<any> {
 
   return res.json()
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// TYPED SESSION HELPERS
+// ─────────────────────────────────────────────────────────────────────
+
+/** Upload a resume file and return the DB resume_id */
+export async function uploadResume(
+  file: File,
+  name?: string,
+): Promise<{ resume_id: string; name: string; char_count: number }> {
+  const fd = new FormData()
+  fd.append('file', file)
+  if (name) fd.append('name', name)
+  return apiUpload('/upload/resume', fd)
+}
+
+/** List previously uploaded resumes for the current user */
+export async function listResumes(): Promise<{ resumes: UploadedResume[] }> {
+  return apiCall('/resumes/')
+}
+
+/** Kick off a new tailoring session */
+export async function startAnalysis(
+  resumeId: string,
+  jobDescription: string,
+): Promise<{ session_id: string; status: string }> {
+  return apiCall('/sessions/analyze', {
+    method: 'POST',
+    body: JSON.stringify({ resume_id: resumeId, job_description: jobDescription }),
+  })
+}
+
+/** Poll session status once */
+export async function getSessionStatus(
+  sessionId: string,
+): Promise<{ status: string; initial_ats_score: number | null; error_message: string | null }> {
+  return apiCall(`/sessions/${sessionId}/status`)
+}
+
+/** Fetch all keyword decisions for a session */
+export async function getSessionKeywords(
+  sessionId: string,
+): Promise<{ session_id: string; keywords: BackendKeyword[] }> {
+  return apiCall(`/sessions/${sessionId}/keywords`)
+}
+
+/** Accept or reject a single keyword */
+export async function updateKeywordDecision(
+  sessionId: string,
+  keywordId: string,
+  decision: 'accepted' | 'rejected',
+  clarifyingAnswer?: string,
+): Promise<void> {
+  await apiCall(`/sessions/${sessionId}/keywords/${keywordId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ decision, clarifying_answer: clarifyingAnswer ?? null }),
+  })
+}
+
+/** Finalize the session after keyword review — triggers bullet rewriting */
+export async function finalizeSession(
+  sessionId: string,
+): Promise<{ session_id: string; status: string }> {
+  return apiCall(`/sessions/${sessionId}/finalize`, { method: 'POST' })
+}
+
+/** Get the signed PDF download URL */
+export async function downloadPdf(
+  sessionId: string,
+): Promise<{ url: string; filename: string; expires_in: number }> {
+  return apiCall(`/sessions/${sessionId}/download-pdf`)
+}
+
+/**
+ * Poll /status every intervalMs until the status matches one of targetStatuses.
+ * Calls onProgress(status) on each tick so UI can update.
+ * Rejects if status === 'failed' or 'timed_out'.
+ */
+export async function pollUntil(
+  sessionId: string,
+  targetStatuses: string[],
+  onProgress?: (status: string) => void,
+  intervalMs = 3000,
+  maxAttempts = 60,
+): Promise<string> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const { status, error_message } = await getSessionStatus(sessionId)
+    onProgress?.(status)
+
+    if (targetStatuses.includes(status)) return status
+    if (status === 'failed' || status === 'timed_out') {
+      throw new Error(error_message || `Session ${status}`)
+    }
+
+    await new Promise((r) => setTimeout(r, intervalMs))
+  }
+  throw new Error('Analysis timed out. Please try again.')
+}
+

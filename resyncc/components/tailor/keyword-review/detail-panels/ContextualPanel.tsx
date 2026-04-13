@@ -5,21 +5,28 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useDashboardStore } from '@/store/dashboard.store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
+import { updateKeywordDecision } from '@/lib/api';
 
 export function ContextualPanel({ keyword }: { keyword: Keyword }) {
-  const { updateKeywordStatus } = useDashboardStore();
+  const { updateKeywordStatus, sessionId } = useDashboardStore();
   const [isExiting, setIsExiting] = useState(false);
+  const [answer, setAnswer] = useState('');
 
   const handleConfirm = () => {
     setIsExiting(true);
+    if (sessionId) {
+      updateKeywordDecision(sessionId, keyword.id, 'accepted', answer || undefined).catch(console.error);
+    }
     setTimeout(() => {
       updateKeywordStatus(keyword.id, 'matched');
-      // A full implementation would auto-select next pending here
     }, 300);
   };
 
   const handleReject = () => {
     setIsExiting(true);
+    if (sessionId) {
+      updateKeywordDecision(sessionId, keyword.id, 'rejected').catch(console.error);
+    }
     setTimeout(() => {
       updateKeywordStatus(keyword.id, 'rejected');
     }, 300);
@@ -54,6 +61,8 @@ export function ContextualPanel({ keyword }: { keyword: Keyword }) {
           </div>
 
           <textarea
+            value={answer}
+            onChange={e => setAnswer(e.target.value)}
             placeholder="Describe your relevant experience..."
             className="w-full min-h-[80px] bg-white border border-border rounded-xl p-4 text-[13px] font-sans text-ink outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-shadow resize-none"
           />

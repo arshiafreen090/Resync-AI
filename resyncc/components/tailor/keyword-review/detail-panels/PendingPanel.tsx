@@ -5,9 +5,10 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useDashboardStore } from '@/store/dashboard.store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
+import { updateKeywordDecision } from '@/lib/api';
 
 export function PendingPanel({ keyword }: { keyword: Keyword }) {
-  const { updateKeywordStatus } = useDashboardStore();
+  const { updateKeywordStatus, sessionId } = useDashboardStore();
   const [isExiting, setIsExiting] = useState(false);
 
   // Simple highlight function
@@ -23,6 +24,11 @@ export function PendingPanel({ keyword }: { keyword: Keyword }) {
 
   const handleAction = (status: 'matched' | 'rejected') => {
     setIsExiting(true);
+    // Fire API call if real session exists
+    if (sessionId) {
+      const decision = status === 'matched' ? 'accepted' : 'rejected';
+      updateKeywordDecision(sessionId, keyword.id, decision).catch(console.error);
+    }
     setTimeout(() => {
       updateKeywordStatus(keyword.id, status);
     }, 300);
