@@ -1,9 +1,15 @@
 {
   "name": "resync-ai",
   "version": "1.0.0",
+  "private": true,
   "description": "ReSync AI - Landing Page",
   "scripts": {
-    "dev": "npm run dev --prefix resyncc",
-    "start": "npm start --prefix resyncc"
-  }
+    "dev": "npm run dev --prefix apps/frontend",
+    "start": "npm run start --prefix apps/frontend",
+    "build": "npm run build --prefix apps/frontend",
+    "lint": "npm run lint --prefix apps/frontend"
+  },
+  "workspaces": [
+    "apps/frontend"
+  ]
 }

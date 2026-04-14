@@ -8,16 +8,22 @@ Inspo\ Asset/**/node_modules/
 tempmediaStorage/
 .gemini/
 
+# Local AI/tooling artifacts
+skills_/
+skills-lock.json
+skills/
+.agents/
+
 # Project-specific subfolder ignores
-resyncc/node_modules/
-resyncc/.next/
-resyncc/out/
-resyncc/build/
-resyncc/.vercel/
-resyncc/next-env.d.ts
-resyncc/.pnp
-resyncc/.pnp.js
-resyncc/.yarn/install-state.gz
+apps/frontend/node_modules/
+apps/frontend/.next/
+apps/frontend/out/
+apps/frontend/build/
+apps/frontend/.vercel/
+apps/frontend/next-env.d.ts
+apps/frontend/.pnp
+apps/frontend/.pnp.js
+apps/frontend/.yarn/install-state.gz
 
 # Next.js specific
 .next/
