@@ -876,7 +876,9 @@ section {
 .feature-icon svg {
   width: 22px;
   height: 22px;
-  fill: white;
+  fill: none;
+  stroke: white;
+  stroke-width: 2;
 }
 
 .feature-name {
@@ -3240,4 +3242,223 @@ section {
     padding: 32px 24px;
     border-radius: 20px;
   }
+}
+
+/* ──────────────── MOBILE NAVIGATION ──────────────── */
+
+/* Hamburger button — hidden on desktop, visible on mobile */
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  padding: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 200;
+}
+
+.hamburger-bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #ffffff;
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform-origin: center;
+}
+
+/* When dark nav is active, bars should be dark */
+nav.nav-dark .hamburger-bar {
+  background: var(--ink);
+}
+
+/* Animated open state */
+.nav-hamburger .hamburger-bar:nth-child(1).open {
+  transform: translateY(7px) rotate(45deg);
+}
+.nav-hamburger .hamburger-bar:nth-child(2).open {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.nav-hamburger .hamburger-bar:nth-child(3).open {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Mobile overlay backdrop */
+.mobile-nav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 150;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Slide-in drawer */
+.mobile-nav-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100%;
+  background: var(--cream);
+  display: flex;
+  flex-direction: column;
+  padding: 80px 32px 48px;
+  gap: 40px;
+  animation: slideIn 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.mobile-nav-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-nav-links a {
+  display: block;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  transition: color 0.2s;
+}
+
+.mobile-nav-links a:hover {
+  color: var(--blue);
+}
+
+.mobile-nav-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.mobile-btn-ghost {
+  display: block;
+  text-align: center;
+  padding: 13px 24px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.mobile-btn-ghost:hover {
+  background: rgba(14, 12, 10, 0.05);
+}
+
+.mobile-btn-primary {
+  display: block;
+  text-align: center;
+  padding: 13px 24px;
+  background: var(--ink);
+  border-radius: 10px;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.mobile-btn-primary:hover {
+  background: var(--blue);
+}
+
+/* Show hamburger, hide sign-in and try-free text links on mobile */
+@media (max-width: 900px) {
+  .nav-hamburger {
+    display: flex;
+  }
+
+  /* Hide Sign In / Try Free buttons on mobile — they're in the drawer */
+  nav .nav-actions .btn-ghost,
+  nav .nav-actions .btn-primary {
+    display: none;
+  }
+}
+
+/* ──────────────── RESPONSIVE FOOTER ──────────────── */
+@media (max-width: 900px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    text-align: left;
+  }
+
+  .footer-creator {
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .footer-legal {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .app-footer {
+    padding: 48px 24px 32px;
+  }
+}
+
+/* ──────────────── ACCESSIBILITY ──────────────── */
+
+/* Skip to main content link */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 9999;
+  background: var(--blue);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 16px;
+}
+
+/* Focus visible styles */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+  border-radius: 4px;
 }

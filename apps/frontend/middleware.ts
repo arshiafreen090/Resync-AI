@@ -11,6 +11,10 @@ const PROTECTED_PREFIXES = [
   '/settings',
 ]
 
+// Placeholder values used when env vars are absent (e.g. local dev without .env.local)
+const FALLBACK_URL = 'https://placeholder.supabase.co'
+const FALLBACK_KEY = 'placeholder-anon-key'
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
@@ -21,9 +25,12 @@ export async function middleware(request: NextRequest) {
     request: { headers: request.headers },
   })
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || FALLBACK_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || FALLBACK_KEY
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
@@ -42,9 +49,14 @@ export async function middleware(request: NextRequest) {
 
   // Calling getSession() causes the middleware to refresh the auth token
   // and write updated cookies. Must be called before any redirect.
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  let session = null
+  try {
+    const { data } = await supabase.auth.getSession()
+    session = data.session
+  } catch {
+    // If Supabase is not configured, treat as unauthenticated
+    session = null
+  }
 
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))
 

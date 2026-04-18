@@ -18,7 +18,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <QueryProvider>{children}</QueryProvider>
+        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <QueryProvider>
+          <main id="main-content">{children}</main>
+        </QueryProvider>
       </body>
     </html>
   )
